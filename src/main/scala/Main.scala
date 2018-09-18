@@ -3,50 +3,65 @@ import settings.Settings._
 import scalafx.Includes._
 import scalafx.application
 import scalafx.application.{JFXApp, Platform}
-import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
 import scalafx.scene.Scene
 import scalafx.scene.control.ButtonBar.ButtonData
 import scalafx.scene.control._
 import scalafx.scene.layout.{GridPane, VBox}
+import scalaj.http.{Http, HttpOptions, HttpRequest}
 
 object Main extends JFXApp {
-  val loggedIn = false
+  var loggedIn = false
   stage = new application.JFXApp.PrimaryStage {
     title = "Battleknight Monitor"
     scene = new Scene {
       title = ""
       content = new VBox {
         children = new Button(if(!loggedIn) "Login" else "Logout") {
-          onAction = handle {if(!loggedIn) showLoginDialog() else logout()}
+          onAction = handle {if(!loggedIn) showLoginDialog("Log in") else logout()}
         }
         padding = Insets(top = 24, right = 64, bottom = 24, left = 64)
       }
     }
 
-    def login(): Unit = {
-      //TODO
+    def login(credentials: LoginCredentials): Boolean = {
+      val loginRequest: HttpRequest = Http(credentials.loginUrl)
+      println(loginRequest.asString.body)
+//      if(loginRequest.asString.isCodeInRange(303,303)){
+//        true
+//      } else {
+//        false
+//      }
+//
+//      val rankingUrl = "https://s" + credentials.server.toString + "-pl.battleknight.gameforge.com/highscore/"
+//      val rankingRequest: HttpRequest = Http(rankingUrl)
+//      println(rankingRequest.asString)
+      //TODO perform login, return true if logged in, false if not
+      false
     }
 
     def logout(): Unit = {
-      //TODO
+      //FIXME
+//      val logoutUrl = "https://s28-pl.battleknight.gameforge.com/user/logout/"
+//      val logoutRequest: HttpRequest = Http(logoutUrl)
     }
 
     def showMainDialog(): Unit = {
       //TODO
     }
 
-    def showLoginDialog(): Unit = {
+    def showLoginDialog(header: String): Unit = {
+      /* Create result class */
+      case class Result(username: String, password: String, server: Int, remember: Boolean)
 
-      // Create the custom dialog.
-      val dialog = new Dialog[LoginCredentials]() {
+      /* Create dialog */
+      val dialog = new Dialog[Result]() {
         initOwner(stage)
         title = "Login Dialog"
-        headerText = "Please, log in"
-        //      graphic = new ImageView(this.getClass.getResource("login_icon.png").toString)
+        headerText = header
       }
 
-      // Set the button types.
+      /* Set the button types */
       val loginButtonType = new ButtonType("Login", ButtonData.OKDone)
       dialog.dialogPane().buttonTypes = Seq(loginButtonType, ButtonType.Cancel)
 
@@ -54,7 +69,9 @@ object Main extends JFXApp {
       val username = new TextField() { promptText = "Username" }
       val password = new PasswordField() { promptText = "Password" }
       val server = new ComboBox[Int](for(i <- 1 to SERVER_NEWEST) yield i) { value = SERVER_DEFAULT_VALUE }
+      val remember = new CheckBox()
 
+      /* Create grid and position elements */
       val grid = new GridPane() {
         hgap = 10
         vgap = 10
@@ -66,43 +83,40 @@ object Main extends JFXApp {
         add(password, 1, 1)
         add(new Label("Server:"), 0, 2)
         add(server, 1, 2)
+        add(new Label("Remember me :"), 0, 3)
+        add(remember, 1, 3)
       }
 
-      // Enable/Disable login button depending on whether a username was entered.
+      /* Enable/Disable login button depending on whether a username was entered */
       val loginButton = dialog.dialogPane().lookupButton(loginButtonType)
       loginButton.disable = true
 
-      // Do some validation (disable when username is empty).
+      /* Do some validation (disable when username is empty) */
       username.text.onChange { (_, _, newValue) => loginButton.disable = newValue.trim().isEmpty}
 
       dialog.dialogPane().content = grid
 
-      // Request focus on the username field by default.
+      /* Request focus on the username field by default */
       Platform.runLater(username.requestFocus())
 
-      // Convert the result to a username-password-pair when the login button is clicked.
+      /* Convert the result to LoginCredentials instance when the login button is clicked */
+      //TODO Call login function if return true then close if false then stop from closing and possibly reset fields
       dialog.resultConverter = dialogButton =>
-        if (dialogButton == loginButtonType) LoginCredentials(username.text(), password.text(), server.value())
+        if (dialogButton == loginButtonType) Result(username.text(), password.text(), server.value(), remember.selected.value)
         else null
 
       val result = dialog.showAndWait()
 
       result match {
-        case Some(LoginCredentials(u, p, s)) => println("Username=" + u + ", Password=" + p)
-        case None               => println("Dialog returned: None")
+        case Some(Result(u, p, s, r)) => {
+          if(login(LoginCredentials(u, p, s))){
+            //TODO save!
+          } else {
+            showLoginDialog("Incorrect credentials. Try again")
+          }
+        }
+        case None =>
       }
     }
-  }
-
-
-
-  def login(credentials: LoginCredentials): Boolean = {
-    //TODO perform login, return true if logged in, false if not
-    ???
-  }
-
-  def setPosition(item: Control, x: Int, y: Int): Unit = {
-    item.layoutX = x
-    item.layoutY = y
   }
 }
