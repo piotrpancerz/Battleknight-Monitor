@@ -1,4 +1,6 @@
-import login.LoginCredentials
+import java.net.HttpCookie
+
+import login.{LoginCookies, LoginCredentials}
 import settings.Settings._
 import scalafx.Includes._
 import scalafx.application
@@ -11,6 +13,7 @@ import scalafx.scene.layout.{GridPane, VBox}
 import scalaj.http.{Http, HttpOptions, HttpRequest}
 
 object Main extends JFXApp {
+  var sessionCookies = LoginCookies()
   var loggedIn = false
   stage = new application.JFXApp.PrimaryStage {
     title = "Battleknight Monitor"
@@ -25,28 +28,26 @@ object Main extends JFXApp {
     }
 
     def login(credentials: LoginCredentials): Boolean = {
-      val loginRequest: HttpRequest = Http(credentials.loginUrl)
-      println(loginRequest.asString.body)
-//      if(loginRequest.asString.isCodeInRange(303,303)){
-//        true
-//      } else {
-//        false
-//      }
-//
-//      val rankingUrl = "https://s" + credentials.server.toString + "-pl.battleknight.gameforge.com/highscore/"
-//      val rankingRequest: HttpRequest = Http(rankingUrl)
-//      println(rankingRequest.asString)
-      //TODO perform login, return true if logged in, false if not
+//      sessionCookies.handleUnparsed(Http(credentials.loginUrl).asString.cookies)
+      if(sessionCookies.areSet()){
+        loggedIn = true
+        true
+      } else {
+        loggedIn = false
+        false
+      }
       false
     }
 
     def logout(): Unit = {
-      //FIXME
-//      val logoutUrl = "https://s28-pl.battleknight.gameforge.com/user/logout/"
-//      val logoutRequest: HttpRequest = Http(logoutUrl)
+      val logoutUrl = "https://s28-pl.battleknight.gameforge.com/user/logout/"
+      Http(logoutUrl)
+      sessionCookies.clear()
     }
 
-    def showMainDialog(): Unit = {
+//    def makeNew
+
+    def showCompareDialog(): Unit = {
       //TODO
     }
 
