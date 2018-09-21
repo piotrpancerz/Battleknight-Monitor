@@ -1,5 +1,7 @@
 package login
 
+import java.net.HttpCookie
+
 import scala.collection.mutable
 
 case class LoginCookies(){
@@ -15,12 +17,11 @@ case class LoginCookies(){
 
   def update(name: String, value: String): Unit = if(keys.contains(name)) cookies(name) = value
 
-  def handleUnparsed(strings: Vector[String]): Unit = {
-    strings.foreach({ eachCookie => {
-      eachCookie.split("=") match {
-        case Array(name: String, value: String, _*) => if(keys.contains(name)) this(name) = value
-        case _ =>
-      }
+  def handleUnparsed(cookies: IndexedSeq[HttpCookie]): Unit = {
+    cookies.foreach({ eachCookie => {
+      val name = eachCookie.getName()
+      val value = eachCookie.getValue()
+      if(keys.contains(name)) this(name) = value
     }})
   }
 

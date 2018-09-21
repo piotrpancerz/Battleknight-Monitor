@@ -1,5 +1,7 @@
 package login
 
+import java.net.HttpCookie
+
 import org.junit.Assert._
 import org.junit._
 
@@ -79,17 +81,19 @@ class TestCookies {
 
   @Test
   def handleUnparsed = {
-    val vect = Vector("asdasdasd","BattleKnightSession=test1","ss=ss","BattleKnight=test2","=")
-    cookies.handleUnparsed(vect)
-    assertEquals("test1", cookies("BattleKnightSession"))
-    assertEquals("test2", cookies("BattleKnight"))
+    val seq = IndexedSeq(new HttpCookie("yyy","test1"), new HttpCookie("BattleKnightSession","test2"), new HttpCookie("xxx","test3"), new HttpCookie("BattleKnight","test4"))
+    cookies.handleUnparsed(seq)
+    assertEquals("", cookies("yyy"))
+    assertEquals("test2", cookies("BattleKnightSession"))
+    assertEquals("", cookies("xxx"))
+    assertEquals("test4", cookies("BattleKnight"))
     assertEquals(2, cookies().size)
   }
 
   @Test
   def handleUnparsedDuplicatedKeys = {
-    val vect = Vector("BattleKnight=test1","BattleKnightSession=test2","BattleKnightSession=test3","BattleKnight=test4")
-    cookies.handleUnparsed(vect)
+    val seq = IndexedSeq(new HttpCookie("BattleKnight","test1"), new HttpCookie("BattleKnightSession","test2"), new HttpCookie("BattleKnightSession","test3"), new HttpCookie("BattleKnight","test4"))
+    cookies.handleUnparsed(seq)
     assertEquals("test3", cookies("BattleKnightSession"))
     assertEquals("test4", cookies("BattleKnight"))
     assertEquals(2, cookies().size)

@@ -1,5 +1,3 @@
-import java.net.HttpCookie
-
 import login.{LoginCookies, LoginCredentials}
 import settings.Settings._
 import scalafx.Includes._
@@ -14,29 +12,38 @@ import scalaj.http.{Http, HttpOptions, HttpRequest}
 
 object Main extends JFXApp {
   var sessionCookies = LoginCookies()
-  var loggedIn = false
   stage = new application.JFXApp.PrimaryStage {
-    title = "Battleknight Monitor"
     scene = new Scene {
-      title = ""
+      title = "Battleknight Monitor"
       content = new VBox {
-        children = new Button(if(!loggedIn) "Login" else "Logout") {
-          onAction = handle {if(!loggedIn) showLoginDialog("Log in") else logout()}
+        val button = new Button() {
+          text = "Log In"
+          onAction = handle {
+            if(this.text() == "Log In"){
+              this.disable = true
+              showLoginDialog("Log in")
+              if(sessionCookies.areSet()) this.text = "Log Out"
+              this.disable = false
+            } else {
+              this.disable = true
+              logout()
+              this.text = "Log In"
+              this.disable = false
+            }}
         }
+        children = List(button)
         padding = Insets(top = 24, right = 64, bottom = 24, left = 64)
       }
     }
 
     def login(credentials: LoginCredentials): Boolean = {
-//      sessionCookies.handleUnparsed(Http(credentials.loginUrl).asString.cookies)
+      sessionCookies.clear()
+      sessionCookies.handleUnparsed(Http(credentials.loginUrl).asString.cookies)
       if(sessionCookies.areSet()){
-        loggedIn = true
         true
       } else {
-        loggedIn = false
         false
       }
-      false
     }
 
     def logout(): Unit = {
@@ -45,18 +52,22 @@ object Main extends JFXApp {
       sessionCookies.clear()
     }
 
-//    def makeNew
+    def makeNewSave() = {
+      //TODO
+      reloadSaves()
+    }
+
+    def reloadSaves() = {
+      //TODO
+    }
 
     def showCompareDialog(): Unit = {
       //TODO
     }
 
     def showLoginDialog(header: String): Unit = {
-      /* Create result class */
-      case class Result(username: String, password: String, server: Int, remember: Boolean)
-
       /* Create dialog */
-      val dialog = new Dialog[Result]() {
+      val dialog = new Dialog[LoginCredentials]() {
         initOwner(stage)
         title = "Login Dialog"
         headerText = header
@@ -70,7 +81,6 @@ object Main extends JFXApp {
       val username = new TextField() { promptText = "Username" }
       val password = new PasswordField() { promptText = "Password" }
       val server = new ComboBox[Int](for(i <- 1 to SERVER_NEWEST) yield i) { value = SERVER_DEFAULT_VALUE }
-      val remember = new CheckBox()
 
       /* Create grid and position elements */
       val grid = new GridPane() {
@@ -84,8 +94,6 @@ object Main extends JFXApp {
         add(password, 1, 1)
         add(new Label("Server:"), 0, 2)
         add(server, 1, 2)
-        add(new Label("Remember me :"), 0, 3)
-        add(remember, 1, 3)
       }
 
       /* Enable/Disable login button depending on whether a username was entered */
@@ -101,19 +109,18 @@ object Main extends JFXApp {
       Platform.runLater(username.requestFocus())
 
       /* Convert the result to LoginCredentials instance when the login button is clicked */
-      //TODO Call login function if return true then close if false then stop from closing and possibly reset fields
       dialog.resultConverter = dialogButton =>
-        if (dialogButton == loginButtonType) Result(username.text(), password.text(), server.value(), remember.selected.value)
+        if (dialogButton == loginButtonType) LoginCredentials(username.text(), password.text(), server.value())
         else null
 
       val result = dialog.showAndWait()
 
       result match {
-        case Some(Result(u, p, s, r)) => {
-          if(login(LoginCredentials(u, p, s))){
-            //TODO save!
-          } else {
+        case Some(credentials: LoginCredentials) => {
+          if(!login(credentials)){
             showLoginDialog("Incorrect credentials. Try again")
+          } else {
+            "Correctly logged in"
           }
         }
         case None =>
