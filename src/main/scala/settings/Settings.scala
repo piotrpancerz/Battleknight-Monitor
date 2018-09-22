@@ -6,5 +6,4 @@ object Settings {
   val PASSWORD_DEFAULT_VALUE = ""
   val SERVER_DEFAULT_VALUE = 29
   val SERVER_NEWEST = 29
-
 }

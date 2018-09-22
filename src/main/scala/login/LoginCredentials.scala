@@ -14,5 +14,5 @@ case class LoginCredentials(private val _username: String, private val _password
     val bigInt = new BigInteger(1, bytes)
     bigInt.toString(16)
   }
-  def loginUrl = "https://s" + _server.toString + "-pl.battleknight.gameforge.com/main/login/" + parsedUsername + "/" + encryptedPassword + "?kid=&servername=null&serverlanguage=null"
+  def loginUrl: String = "https://s" + _server.toString + "-pl.battleknight.gameforge.com/main/login/" + parsedUsername + "/" + encryptedPassword + "?kid=&servername=null&serverlanguage=null"
 }

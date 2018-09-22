@@ -27,7 +27,7 @@ case class LoginCookies(){
 
   def areSet(): Boolean = {
     cookies.foreach( eachCookie => {
-      if(eachCookie._2 == "") return false
+      if(eachCookie._2 == "" || eachCookie._2 == "deleted") return false
     })
     true
   }
